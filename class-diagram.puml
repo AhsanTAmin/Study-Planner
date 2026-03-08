@@ -1,0 +1,75 @@
+@startuml
+top to bottom direction
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam dpi 260
+skinparam ranksep 90
+skinparam nodesep 70
+hide members
+
+title AI-inspired Smart Study Planner - Simplified Architectural Class Diagram
+
+package "Facade" {
+  class PlannerFacade
+}
+
+package "Strategy" {
+  interface SchedulingStrategy
+  class EarliestDeadlineStrategy
+  class PriorityWeightedStrategy
+  class AdaptivePriorityStrategy
+}
+
+package "Persistence" {
+  interface TaskDAO
+  class InMemoryTaskDAO
+}
+
+package "Intelligence" {
+  interface TaskScorer
+  class HeuristicTaskScorer
+  class TaskRecommendationService
+  class TaskRecommendation
+}
+
+package "Domain" {
+  class Task
+  class StudySession
+  class StudyPlan
+}
+
+package "Integration" {
+  interface TaskImportAdapter
+  class CsvTaskImportAdapter
+}
+
+package "Factory" {
+  class TaskFactory
+}
+
+PlannerFacade --> SchedulingStrategy
+PlannerFacade --> TaskDAO
+PlannerFacade ..> StudyPlan
+
+SchedulingStrategy <|.. EarliestDeadlineStrategy
+SchedulingStrategy <|.. PriorityWeightedStrategy
+SchedulingStrategy <|.. AdaptivePriorityStrategy
+
+TaskDAO <|.. InMemoryTaskDAO
+TaskImportAdapter <|.. CsvTaskImportAdapter
+TaskScorer <|.. HeuristicTaskScorer
+
+StudyPlan *-- StudySession
+StudySession --> Task
+
+CsvTaskImportAdapter --> TaskFactory
+TaskFactory ..> Task
+
+AdaptivePriorityStrategy --> TaskRecommendationService
+TaskRecommendationService --> TaskScorer
+TaskRecommendation --> Task
+
+@enduml

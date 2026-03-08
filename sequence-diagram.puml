@@ -1,0 +1,63 @@
+@startuml
+autonumber
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam responseMessageBelowArrow true
+skinparam sequenceMessageAlign center
+
+title Generate Adaptive Study Plan from Imported CSV Tasks
+
+actor User
+participant App
+participant "CsvTaskImportAdapter" as Adapter
+participant "TaskFactory" as Factory
+participant "PlannerFacade" as Facade
+participant "InMemoryTaskDAO" as DAO
+participant "AdaptivePriorityStrategy" as Strategy
+participant "TaskRecommendationService" as RecommendationService
+participant "HeuristicTaskScorer" as Scorer
+participant "StudyPlan" as Plan
+
+User -> App : start application / import tasks
+App -> Adapter : importTasks(csvLines)
+
+loop for each CSV line
+  Adapter -> Factory : createTask(type, name, duration, deadline, priority)
+  Factory --> Adapter : Task
+end
+
+Adapter --> App : List<Task>
+
+App -> Facade : saveTasks(importedTasks)
+Facade -> DAO : saveTasks(importedTasks)
+DAO --> Facade : saved
+
+App -> Facade : loadTasks()
+Facade -> DAO : loadTasks()
+DAO --> Facade : List<Task>
+Facade --> App : List<Task>
+
+App -> Facade : buildStudyPlan(loadedTasks)
+Facade -> Strategy : generatePlan(loadedTasks)
+Strategy -> RecommendationService : recommendTasks(loadedTasks)
+
+loop for each task
+  RecommendationService -> Scorer : score(task)
+  Scorer --> RecommendationService : TaskRecommendation
+end
+
+RecommendationService --> Strategy : ordered recommendations
+Strategy --> Facade : ordered List<Task>
+
+create Plan
+Facade -> Plan : new StudyPlan()
+
+loop for each ordered task
+  Facade -> Plan : addSession(new StudySession(task, durationHours))
+end
+
+Plan --> Facade : completed StudyPlan
+Facade --> App : StudyPlan
+
+App -> User : display adaptive study plan and recommendation explanations
+@enduml
